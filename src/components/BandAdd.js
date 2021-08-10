@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import { SocketContext } from "../context/SocketContext";
 
-export const BandAdd = ({ createBand }) => {
+export const BandAdd = () => {
   const [value, setValue] = useState("");
+  const { socket } = useContext(SocketContext);
 
   const onSubmit = (event) => {
     event.preventDefault();
 
-    if (value.trim().length >= 0) {
-      createBand(value);
+    const bandName = value.trim();
+
+    if (bandName.length >= 0) {
+      socket.emit("create-band", { name: bandName });
       setValue("");
     }
   };

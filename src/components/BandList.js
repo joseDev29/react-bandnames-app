@@ -1,19 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { Socket } from "socket.io-client";
+import React, { useContext, useEffect, useState } from "react";
 
-export const BandList = ({
-  data,
-  vote,
-  deleteBand,
-  changeName: updateName,
-}) => {
-  const [bands, setBands] = useState(data);
+import { SocketContext } from "../context/SocketContext";
+
+export const BandList = () => {
+  const { socket } = useContext(SocketContext);
+
+  const [bands, setBands] = useState([]);
 
   useEffect(() => {
-    setBands(data);
-  }, [data]);
+    socket.on("current-bands", (data) => {
+      setBands(data);
+    });
+    //El return en un useEffect es una arrow function que se ejecuta solo en el momento en el que
+    //el componente va a ser eliminado
+    //En caso de que el componente vaya ser eliminado, ya no es necesario escuchar ese evento
+    return () => {
+      socket.off("current-bands");
+    };
+  }, [socket]);
 
-  const onChangeName = (event, id) => {
+  const onChangeInputName = (event, id) => {
     const newName = event.target.value;
 
     setBands(
@@ -26,9 +32,17 @@ export const BandList = ({
     );
   };
 
+  const vote = (id) => {
+    socket.emit("vote-band", id);
+  };
+
   const onNotFocus = (id, name) => {
-    console.log("change name: ", id, name);
-    updateName(id, name);
+    const data = { id, name };
+    socket.emit("change-name-band", data);
+  };
+
+  const deleteBand = (id) => {
+    socket.emit("delete-band", id);
   };
 
   const createRows = () => {
@@ -49,7 +63,7 @@ export const BandList = ({
             type="text"
             className="form-control"
             value={band.name}
-            onChange={(event) => onChangeName(event, band.id)}
+            onChange={(event) => onChangeInputName(event, band.id)}
             onBlur={() => {
               onNotFocus(band.id, band.name);
             }}
